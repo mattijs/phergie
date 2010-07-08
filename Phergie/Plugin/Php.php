@@ -61,7 +61,7 @@ class Phergie_Plugin_Php extends Phergie_Plugin_Abstract
         $sourceClass = $this->getConfig('php.source', 'OnlineManual');
         $sourceClass = 'Phergie_Plugin_Php_Source_' . ucfirst($sourceClass);
 
-        $this->source = new $sourceClass;
+        $this->source = new $sourceClass($this);
     }
 
     /**

@@ -34,32 +34,40 @@
 class Phergie_Plugin_Php_Source_OnlineManual implements Phergie_Plugin_Php_Source
 {
     /**
-     * HTTP plugin
+     * The PHP plugin this source is used by.
+     * @var Phergie_Plugin_Php
+     */
+    protected $plugin = null;
+    
+    /**
+     * HTTP plugin reference
      * @var Phergie_Plugin_Http
      */
-    protected $_http = null;
+    protected $http = null;
 
     /**
      * Base url to the php online manual
      * @var string
      */
-    protected $_manualUrl = 'http://www.php.net/manual';
+    protected $manualUrl = 'http://www.php.net/manual';
 
     /**
      * Manual language. Default: en
+     * @todo Make this configurable through Settings.php
      * @var string
      */
-    protected $_manualLanguage = 'en';
+    protected $manualLanguage = 'en';
 
     /** **/
 
     /**
-     * Creates a new Http plugin for fetching manual entries.
+     * Creates a new Http plugin for fetching manual entries.\
+     * @param Phergie_Plugin_Handler $plugins Phergie plugin handler
      */
-    public function __construct()
+    public function __construct(Phergie_Plugin_Php $plugin)
     {
-        $this->_http = new Phergie_Plugin_Http();
-        $this->_http->onLoad();
+        $this->plugin = $plugin;
+        $this->http = $plugin->getPluginHandler()->getPlugin('Http');
     }
 
     /**
@@ -75,18 +83,19 @@ class Phergie_Plugin_Php_Source_OnlineManual implements Phergie_Plugin_Php_Sourc
         $functionRef = strtolower($functionRef);
 
         // Build the url to the manual entry
-        $url = $this->_manualUrl . '/' . $this->_manualLanguage . '/' . $functionRef . '.php';
+        $url = $this->manualUrl . '/' . $this->manualLanguage . '/' . $functionRef . '.php';
 
         // Get the manual entry
-        $response = $this->_http->get($url);
+        $response = $this->http->get($url);
         if ($response->isError()) {
             return null;
         }
         $html = $response->getContent();
         
         // Build a DOMDocument from the HTML source
+        libxml_use_internal_errors(true);
         $domdoc = new DOMDocument('1.0', 'UTF-8');
-        @$domdoc->loadHTML($html);
+        $domdoc->loadHTML($html);
 
         // Create a new XPath object for finding specific elements
         $xpath = new DOMXPath($domdoc);
@@ -112,6 +121,7 @@ class Phergie_Plugin_Php_Source_OnlineManual implements Phergie_Plugin_Php_Sourc
         $description = $this->_cleanString($domdoc->saveXML($descriptionElement->item(0)));
 
         unset($domdoc);
+        libxml_clear_errors();
 
         return array (
             'name' => $function,
