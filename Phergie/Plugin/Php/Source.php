@@ -36,11 +36,9 @@ interface Phergie_Plugin_Php_Source
     /**
      * Searches for a description of the function.
      * 
-     * @param string $function Search pattern to match against the function 
-     *        name, wildcards supported using %
-     *
-     * @return array|null Associative array containing the function name and 
-     *         description or NULL if no results are found
+     * @param  string $function Function name to search for
+     * @return array|null Associative array containing the function name,
+     *         synopsis and description or NULL if no results are found
      */
     public function findFunction($function);
 }

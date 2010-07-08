@@ -47,11 +47,6 @@ class Phergie_Plugin_Php extends Phergie_Plugin_Abstract
      */
     public function onLoad()
     {
-        // @todo find a way to move this to Phergie_Plugin_Php_Source_Local
-        if (!extension_loaded('PDO') || !extension_loaded('pdo_sqlite')) {
-            $this->fail('PDO and pdo_sqlite extensions must be installed');
-        }
-
         $this->getPluginHandler()->getPlugin('Command');
     }
 
@@ -62,7 +57,11 @@ class Phergie_Plugin_Php extends Phergie_Plugin_Abstract
      */
     public function onConnect()
     {
-        $this->source = new Phergie_Plugin_Php_Source_Local;
+        // Instantiate a new source backend
+        $sourceClass = $this->getConfig('php.source', 'OnlineManual');
+        $sourceClass = 'Phergie_Plugin_Php_Source_' . ucfirst($sourceClass);
+
+        $this->source = new $sourceClass;
     }
 
     /**
@@ -75,12 +74,17 @@ class Phergie_Plugin_Php extends Phergie_Plugin_Abstract
     public function onCommandPhp($functionName)
     {
         $nick = $this->event->getNick();
-        if ($function = $this->source->findFunction($functionName)) {
-            $msg = $nick . ': ' . $function['description'];
-            $this->doPrivmsg($this->event->getSource(), $msg);
+        $function = $this->source->findFunction($functionName);
+
+        if (null !== $function) {
+            $msg = $function['synopsis'];
+            if (isset($function['description']) && !empty($function['description'])) {
+                $msg .= ' - ' . $function['description'];
+            }
         } else {
-            $msg = 'Search for function ' . $functionName . ' returned no results.';
-            $this->doNotice($nick, $msg);
+            $msg = 'Search for ' . $functionName . ' returned no results.';
         }
+
+        $this->doNotice($nick, $msg);
     }
 }
