@@ -34,6 +34,12 @@
 interface Phergie_Plugin_Php_Source
 {
     /**
+     * Constructs a new Php plugin source
+     * @param Phergie_Plugin_Php $plugin A reference to the Php plugin
+     */
+    public function __construct(Phergie_Plugin_Php $plugin);
+
+    /**
      * Searches for a description of the function.
      * 
      * @param  string $function Function name to search for
