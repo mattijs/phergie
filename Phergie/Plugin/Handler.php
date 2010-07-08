@@ -28,7 +28,7 @@
  * @license  http://phergie.org/license New BSD License
  * @link     http://pear.phergie.org/package/Phergie
  */
-class Phergie_Plugin_Handler implements IteratorAggregate
+class Phergie_Plugin_Handler implements IteratorAggregate, Countable
 {
     /**
      * Current list of plugin instances
@@ -73,9 +73,9 @@ class Phergie_Plugin_Handler implements IteratorAggregate
      * plugins.
      *
      * @param Phergie_Config        $config configuration to pass to any
-     *                                      instantiated plugin
+     *        instantiated plugin
      * @param Phergie_Event_Handler $events event handler to pass to any
-     *                                      instantiated plugin
+     *        instantiated plugin
      *
      * @return void
      */
@@ -178,7 +178,7 @@ class Phergie_Plugin_Handler implements IteratorAggregate
             $file = $info['file'];
             $class = $info['class'];
             include_once $file;
-            if (!class_exists($class)) {
+            if (!class_exists($class, false)) {
                 throw new Phergie_Plugin_Exception(
                     'File "' . $file . '" does not contain class "' . $class . '"',
                     Phergie_Plugin_Exception::ERR_CLASS_NOT_FOUND
@@ -212,11 +212,7 @@ class Phergie_Plugin_Handler implements IteratorAggregate
                 $instance = new $class;
             }
 
-            // Configure and add the instance
-            $instance->setPluginHandler($this);
-            $instance->setConfig($this->config);
-            $instance->setEventHandler($this->events);
-            $instance->onLoad();
+            // Store the instance
             $this->plugins[$index] = $instance;
             $plugin = $instance;
 
@@ -226,6 +222,12 @@ class Phergie_Plugin_Handler implements IteratorAggregate
             // Add the plugin instance to the list of plugins
             $this->plugins[strtolower($plugin->getName())] = $plugin;
         }
+
+        // Configure and initialize the instance
+        $plugin->setPluginHandler($this);
+        $plugin->setConfig($this->config);
+        $plugin->setEventHandler($this->events);
+        $plugin->onLoad();
 
         return $plugin;
     }
@@ -311,13 +313,19 @@ class Phergie_Plugin_Handler implements IteratorAggregate
      * loading them if they are not already loaded and autoloading is
      * enabled.
      *
-     * @param array $names List of short names of the plugin classes
+     * @param array $names Optional list of short names of the plugin
+     *        classes to which the returned plugin list will be limited,
+     *        defaults to all presently loaded plugins
      *
-     * @return array Associative array mapping plugin class short names to
-     *         corresponding plugin instances
+     * @return array Associative array mapping lowercased plugin class short
+     *         names to corresponding plugin instances
      */
-    public function getPlugins(array $names)
+    public function getPlugins(array $names = array())
     {
+        if (empty($names)) {
+            return $this->plugins;
+        }
+
         $plugins = array();
         foreach ($names as $name) {
             $plugins[$name] = $this->getPlugin($name);
@@ -430,5 +438,15 @@ class Phergie_Plugin_Handler implements IteratorAggregate
             }
         }
         return true;
+    }
+
+    /**
+     * Returns the number of plugins contained within the handler.
+     *
+     * @return int Plugin count
+     */
+    public function count()
+    {
+        return count($this->plugins);
     }
 }
