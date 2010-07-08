@@ -28,12 +28,17 @@
  * @author   Phergie Development Team <team@phergie.org>
  * @license  http://phergie.org/license New BSD License
  * @link     http://pear.phergie.org/package/Phergie_Plugin_Php_Source_OnlineManual
- * @uses     extension curl
- * @uses     extension pdo_sqlite
  * @uses     Phergie_Plugin_Php_Source pear.phergie.org
+ * @uses     Phergie_Plugin_Http pear.phergie.org
  */
 class Phergie_Plugin_Php_Source_OnlineManual implements Phergie_Plugin_Php_Source
 {
+    /**
+     * HTTP plugin
+     * @var Phergie_Plugin_Http
+     */
+    protected $_http = null;
+
     /**
      * Base url to the php online manual
      * @var string
@@ -47,6 +52,15 @@ class Phergie_Plugin_Php_Source_OnlineManual implements Phergie_Plugin_Php_Sourc
     protected $_manualLanguage = 'en';
 
     /** **/
+
+    /**
+     * Creates a new Http plugin for fetching manual entries.
+     */
+    public function __construct()
+    {
+        $this->_http = new Phergie_Plugin_Http();
+        $this->_http->onLoad();
+    }
 
     /**
      * @see Phergie_Plugin_Php_Source::findFunction()
@@ -63,34 +77,12 @@ class Phergie_Plugin_Php_Source_OnlineManual implements Phergie_Plugin_Php_Sourc
         // Build the url to the manual entry
         $url = $this->_manualUrl . '/' . $this->_manualLanguage . '/' . $functionRef . '.php';
 
-        // Get the HTML from the manual entry, either with file_get_contents or cUrl
-        if ((boolean) ini_get('allow_url_fopen')) {
-            $html = @file_get_contents($url);
-            if (false === $html) {
-                return null;
-            }
+        // Get the manual entry
+        $response = $this->_http->get($url);
+        if ($response->isError()) {
+            return null;
         }
-        else if (extension_loaded('curl')) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
-            curl_setopt($ch, CURLOPT_HEADER, 1);
-            $response = curl_exec($ch);
-            curl_close($ch);
-
-            // Separate headers from body
-            list($headerString, $html) = explode("\r\n\r\n", $response, 2);
-            // Separate headers
-            $headers = explode("\r\n", $headerString);
-            // Check if we're OK
-            if (!preg_match('/HTTP\/1.(?:0|1) 200 OK/i', array_shift($headers)) || empty($html)) {
-                return null;
-            }
-        }
-        else {
-            throw new Phergie_Exception('opening external files or cUrl must be enabled to use this data source.');
-        }
+        $html = $response->getContent();
         
         // Build a DOMDocument from the HTML source
         $domdoc = new DOMDocument('1.0', 'UTF-8');
