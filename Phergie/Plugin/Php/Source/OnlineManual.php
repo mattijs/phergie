@@ -12,7 +12,7 @@
  * http://phergie.org/license
  *
  * @category  Phergie
- * @package   Phergie_Plugin_Php_Source
+ * @package   Phergie_Plugin_Php_Source_OnlineManual
  * @author    Phergie Development Team <team@phergie.org>
  * @copyright 2008-2010 Phergie Development Team (http://phergie.org)
  * @license   http://phergie.org/license New BSD License
@@ -24,7 +24,7 @@
  * http://www.php.net
  *
  * @category Phergie
- * @package  Phergie_Plugin_Php_Source
+ * @package  Phergie_Plugin_Php_Source_OnlineManual
  * @author   Phergie Development Team <team@phergie.org>
  * @license  http://phergie.org/license New BSD License
  * @link     http://pear.phergie.org/package/Phergie_Plugin_Php_Source_OnlineManual
