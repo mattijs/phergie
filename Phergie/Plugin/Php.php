@@ -73,7 +73,7 @@ class Phergie_Plugin_Php extends Phergie_Plugin_Abstract
      */
     public function onCommandPhp($functionName)
     {
-        $nick = $this->event->getNick();
+        $channel = $this->event->getSource();
         $function = $this->source->findFunction($functionName);
 
         if (null !== $function) {
@@ -85,6 +85,6 @@ class Phergie_Plugin_Php extends Phergie_Plugin_Abstract
             $msg = 'Search for ' . $functionName . ' returned no results.';
         }
 
-        $this->doNotice($nick, $msg);
+        $this->doNotice($channel, $msg);
     }
 }
