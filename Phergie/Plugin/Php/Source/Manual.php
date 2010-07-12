@@ -25,7 +25,6 @@
  * - Online manual
  * - Downloaded manual in many HTML files
  * - Downloaded manual in a single HTML file
- * - Donwloaded manual in an CHM file
  *
  * The type of manual can be specified by setting the php.manual.type value to
  * one of the class constants in Settings.php. The path to the manual (either
@@ -46,7 +45,6 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
     CONST MANUAL_TYPE_ONLINE = 1;
     CONST MANUAL_TYPE_MANY = 2;
     CONST MANUAL_TYPE_SINGLE = 3;
-    CONST MANUAL_TYPE_CHM = 4;
 
     /**
      * The PHP plugin this source is used by.
@@ -75,7 +73,7 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
 
         // Check manualType configuration
         $this->manualType = $this->plugin->getConfig('php.manual.type', self::MANUAL_TYPE_ONLINE);
-        if (!in_array($this->manualType, array(self::MANUAL_TYPE_ONLINE, self::MANUAL_TYPE_MANY, self::MANUAL_TYPE_SINGLE, self::MANUAL_TYPE_CHM))) {
+        if (!in_array($this->manualType, array(self::MANUAL_TYPE_ONLINE, self::MANUAL_TYPE_MANY, self::MANUAL_TYPE_SINGLE))) {
             throw new Phergie_Exception('Unknown PHP manual type ' . $manualType .'. Please use one of the class constants.');
         }
 
@@ -86,8 +84,8 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
         else if(self::MANUAL_TYPE_MANY === $this->manualType && !is_dir($this->manualPath)) {
             throw new Phergie_Exception('Could not find manual path for many HTML files manual.');
         }
-        else if ((self::MANUAL_TYPE_SINGLE === $this->manualType || self::MANUAL_TYPE_CHM == $this->manualType) && !is_file($this->manualPath)) {
-            throw new Phergie_Exception('Could not find manual path for single HTML file or CHM manual.');
+        else if (self::MANUAL_TYPE_SINGLE === $this->manualType && !is_file($this->manualPath)) {
+            throw new Phergie_Exception('Could not find manual path for single HTML file manual.');
         }
     }
 
@@ -107,9 +105,6 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
                 break;
             case self::MANUAL_TYPE_MANY:
                 return $this->_findInMany($function);
-                break;
-            case self::MANUAL_TYPE_CHM:
-                return $this->_findInChm($function);
                 break;
             case self::MANUAL_TYPE_ONLINE:
             default:
@@ -266,15 +261,4 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
         return $function;
     }
 
-    /**
-     * Find a function in the chm manual stored locally
-     * @todo Implementd CHM reading
-     * @param string $function
-     * @return array|null
-     */
-    protected function _findInChm($function)
-    {
-        return null;
-    }
-    
 }
