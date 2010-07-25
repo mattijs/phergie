@@ -85,6 +85,6 @@ class Phergie_Plugin_Php extends Phergie_Plugin_Abstract
             $msg = 'Search for ' . $functionName . ' returned no results.';
         }
 
-        $this->doNotice($channel, $msg);
+        $this->doPrivmsg($channel, $msg);
     }
 }

@@ -111,6 +111,20 @@ abstract class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_So
             return null;
         }
 
+        // Find the function name
+        $nameElement = $xpath->evaluate('/html/body//div[@id="' . $reference .'"]//div[@class="refnamediv"]//h1[@class="refname"]');
+        if (0 < $nameElement->length) {
+            $name = $this->_cleanString($domdoc->saveXML($nameElement->item(0)));
+        } else {
+            // Fallback when class/function name could not be found
+            list($class, $method) = explode('.', $reference);
+            if ('function' !== $class) {
+                $name = $class . ' ' . $method;
+            } else {
+                $name = $method;
+            }
+        }
+
         // Find the function synopsis
         $synopsisElement = $xpath->evaluate('/html/body//div[@id="' . $reference .'"]//div[@class="methodsynopsis dc-description"]');
         if (0 >= $synopsisElement->length) {
@@ -129,7 +143,7 @@ abstract class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_So
         libxml_clear_errors();
 
         return array (
-            'name' => $function,
+            'name' => $name,
             'synopsis' => $synopsis,
             'description' => $description,
         );
