@@ -47,7 +47,7 @@ class Phergie_Plugin_Php_Source_OnlineManual
      * Path to the PHP online manual
      * @var string
      */
-    protected $manualPath = 'http://www.php.net/manual/en/';
+    protected $manualPath = 'http://www.php.net/manual/en';
 
     /** **/
 
@@ -65,7 +65,7 @@ class Phergie_Plugin_Php_Source_OnlineManual
 
         // Build the URL to the manual entry
         $http = $this->plugin->getPluginHandler()->getPlugin('Http');
-        $url = $this->manualPath . '/' . $reference . '.php';
+        $url = rtrim($this->manualPath, '/') . '/' . $reference . '.php';
 
         // Get the manual entry
         $response = $http->get($url);

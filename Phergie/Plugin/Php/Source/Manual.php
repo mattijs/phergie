@@ -49,7 +49,12 @@ abstract class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_So
     public function __construct(Phergie_Plugin_Php $plugin)
     {
         $this->plugin = $plugin;
-        $this->manualPath = rtrim($this->plugin->getConfig('php.manual.path', null), '/\\ ');
+
+        // Check for manual path configuration
+        $manualPath = $this->plugin->getConfig('php.manual.path', null);
+        if (null !== $manualPath) {
+            $this->manualPath = rtrim($manualPath, '/\\ ');
+        }
     }
 
     /**
