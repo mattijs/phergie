@@ -20,32 +20,17 @@
  */
 
 /**
- * PHP source backend getting information from the PHP manual. Different types
- * of the PHP manual are supported:
- * - Online manual
- * - Downloaded manual in many HTML files
- * - Downloaded manual in a single HTML file
- *
- * The type of manual can be specified by setting the php.manual.type value to
- * one of the class constants in Settings.php. The path to the manual (either
- * local online) can be specified by setting the php.manual.path value in
- * Settings.php.
+ * Base class for PHP manual sources. Provides shared functionality for
+ * creating function references and extracting function references from HTML.
  *
  * @category Phergie
  * @package  Phergie_Plugin_Php_Source_Manual
  * @author   Phergie Development Team <team@phergie.org>
  * @license  http://phergie.org/license New BSD License
  * @link     http://pear.phergie.org/package/Phergie_Plugin_Php_Source_Manual
- * @uses     Phergie_Plugin_Php_Source pear.phergie.org
  */
-class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
+abstract class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
 {
-
-    /* Manual types */
-    CONST MANUAL_TYPE_ONLINE = 1;
-    CONST MANUAL_TYPE_MANY = 2;
-    CONST MANUAL_TYPE_SINGLE = 3;
-
     /**
      * The PHP plugin this source is used by.
      * @var Phergie_Plugin_Php
@@ -53,66 +38,18 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
     protected $plugin = null;
 
     /**
-     * Abosulte path to the local manual
+     * Path to the manual. This can either be an absolute local path, or an URL
+     * to an online manual.
      * @var string
      */
-    protected $manualPath = 'http://www.php.net/manual/en';
-
-    /**
-     * Type of manual to use. Either many for the "Many HTML files" version
-     * or single for the "Single HTML file" version. Default: many
-     * @var string
-     */
-    protected $manualType = null;
+    protected $manualPath = '';
 
     /** **/
 
     public function __construct(Phergie_Plugin_Php $plugin)
     {
         $this->plugin = $plugin;
-
-        // Check manualType configuration
-        $this->manualType = $this->plugin->getConfig('php.manual.type', self::MANUAL_TYPE_ONLINE);
-        if (!in_array($this->manualType, array(self::MANUAL_TYPE_ONLINE, self::MANUAL_TYPE_MANY, self::MANUAL_TYPE_SINGLE))) {
-            throw new Phergie_Exception('Unknown PHP manual type ' . $manualType .'. Please use one of the class constants.');
-        }
-
         $this->manualPath = rtrim($this->plugin->getConfig('php.manual.path', null), '/\\ ');
-        if (null === $this->manualPath) {
-            throw new Phergie_Exception('No path specified for local PHP manual.');
-        }
-        else if(self::MANUAL_TYPE_MANY === $this->manualType && !is_dir($this->manualPath)) {
-            throw new Phergie_Exception('Could not find manual path for many HTML files manual.');
-        }
-        else if (self::MANUAL_TYPE_SINGLE === $this->manualType && !is_file($this->manualPath)) {
-            throw new Phergie_Exception('Could not find manual path for single HTML file manual.');
-        }
-    }
-
-    /**
-     * @see Phergie_Plugin_Php_Source::findFunction()
-     */
-    public function findFunction($function)
-    {
-        // Check the cache
-        /** @todo implement a sqlite3 cache */
-
-        // Collect the function information
-        switch ($this->manualType)
-        {
-            case self::MANUAL_TYPE_SINGLE:
-                return $this->_findInSingle($function);
-                break;
-            case self::MANUAL_TYPE_MANY:
-                return $this->_findInMany($function);
-                break;
-            case self::MANUAL_TYPE_ONLINE:
-            default:
-                return $this->_findInOnline($function);
-                break;
-        }
-
-        return null;
     }
 
     /**
@@ -170,14 +107,14 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
         }
 
         // Find the function synopsis
-        $synopsisElement = $xpath->evaluate('/html/body//div[@class="methodsynopsis dc-description"]');
+        $synopsisElement = $xpath->evaluate('/html/body//div[@id="' . $reference .'"]//div[@class="methodsynopsis dc-description"]');
         if (0 >= $synopsisElement->length) {
             return null;
         }
         $synopsis = $this->_cleanString($domdoc->saveXML($synopsisElement->item(0)));
 
         // Find the function description
-        $descriptionElement = $xpath->evaluate('/html/body//div[@class="refnamediv"]//p[@class="refpurpose"]//span[@class="dc-title"]');
+        $descriptionElement = $xpath->evaluate('/html/body//div[@id="' . $reference .'"]//div[@class="refnamediv"]//p[@class="refpurpose"]//span[@class="dc-title"]');
         if (0 >= $descriptionElement->length) {
             return null;
         }
@@ -191,78 +128,6 @@ class Phergie_Plugin_Php_Source_Manual implements Phergie_Plugin_Php_Source
             'synopsis' => $synopsis,
             'description' => $description,
         );
-    }
-
-    /**
-     * Find a function in the online manual.
-     * @param string $function The name of the function
-     * @return array|null Associative array containing the function name, synopsis
-     *                    and description or NULL if no results are found
-     */
-    protected function _findInOnline($function)
-    {
-        $reference = $this->_createFunctionReference($function);
-
-        $http = $this->plugin->getPluginHandler()->getPlugin('Http');
-        $url = $this->manualPath . '/' . $reference . '.php';
-
-        // Get the manual entry
-        $response = $http->get($url);
-        if ($response->isError()) {
-            return null;
-        }
-        $html = $response->getContent();
-
-        $function = $this->_extractFromHtml($html, $reference);
-        unset($html);
-        return $function;
-    }
-
-    /**
-     * Find a function in the single HTML file manual stored locally.
-     * @param string $function The name of the function
-     * @return array|null Associative array containing the function name, synopsis
-     *                    and description or NULL if no results are found
-     */
-    protected function _findInSingle($function)
-    {
-        $reference = $this->_createFunctionReference($function);
-
-        $html = file_get_contents($this->manualPath);
-        if (false === $html) {
-            return null;
-        }
-
-        $function = $this->_extractFromHtml($html, $reference);
-        unset($html);
-        return $function;
-    }
-
-    /**
-     * Find a function in the many HTML files manual stored locally.
-     * @param string $function The name of the function
-     * @return array|null Associative array containing the function name, synopsis
-     *                    and description or NULL if no results are found
-     */
-    protected function _findInMany($function)
-    {
-        $reference = $this->_createFunctionReference($function);
-
-        // Find the correct file from the manual
-        $file = $this->manualPath . DIRECTORY_SEPARATOR . $reference . '.html';
-
-        if (!is_file($file)) {
-            return null;
-        }
-
-        $html = file_get_contents($file);
-        if (false === $html) {
-            return null;
-        }
-
-        $function = $this->_extractFromHtml($html, $reference);
-        unset($html);
-        return $function;
     }
 
 }

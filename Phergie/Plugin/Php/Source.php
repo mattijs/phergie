@@ -27,8 +27,6 @@
  * @author   Phergie Development Team <team@phergie.org>
  * @license  http://phergie.org/license New BSD License
  * @link     http://pear.phergie.org/package/Phergie_Plugin_Php
- * @uses     extension pdo 
- * @uses     extension pdo_sqlite 
  * @uses     Phergie_Plugin_Command pear.phergie.org
  */
 interface Phergie_Plugin_Php_Source
