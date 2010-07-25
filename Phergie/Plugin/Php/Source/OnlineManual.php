@@ -44,6 +44,14 @@ class Phergie_Plugin_Php_Source_OnlineManual
     extends Phergie_Plugin_Php_Source_Manual
 {
     /**
+     * Path to the PHP online manual
+     * @var string
+     */
+    protected $manualPath = 'http://www.php.net/manual/en/';
+
+    /** **/
+
+    /**
      * Find a function in the online manual.
      * @see Phergie_Plugin_Php_Source
      * @param string $function The name of the function
